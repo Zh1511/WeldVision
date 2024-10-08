@@ -4,7 +4,7 @@ import torch
 from ultralytics import YOLO
 
 # Title of the Streamlit App
-st.title("Welding Detection with YOLOv8")
+st.title("WeldVision")
 
 # Display disclaimer message
 st.markdown("**Disclaimer: This model is for academic purposes only and not intended for commercial use.**")
