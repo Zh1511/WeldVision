@@ -42,6 +42,13 @@ def load_model():
 # Load the model (using yolov8m by default)
 model = load_model()
 
+# Define a dictionary to map YOLO class names to custom labels
+class_mapping = {
+    'class_1': 'bad weld',   # Replace 'class_1' with the actual YOLO class name
+    'class_2': 'defect',     # Replace 'class_2' with the actual YOLO class name
+    'class_3': 'good weld',  # Replace 'class_3' with the actual YOLO class name
+    # Add more mappings as necessary depending on the YOLO model's class names
+}
 
 # Function to resize the image to 640x640
 def resize_image(image, size=(640, 640)):
