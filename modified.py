@@ -29,7 +29,7 @@ def check_model(model):
 def load_model():
     try:
         device = 'cuda' if torch.cuda.is_available() else 'cpu'
-        model = YOLO("yolov8m.pt")  # Load the yolov8m model
+        model = YOLO("trained.pt")  # Load the yolov8m model
         model.to(device)  # Move model to GPU if available or CPU
         check_model(model)  # Check if the model is loaded and working
         return model
