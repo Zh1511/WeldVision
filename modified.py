@@ -26,10 +26,10 @@ def check_model(model):
 
 # Function to load the selected model and check if it's using GPU or CPU
 @st.cache_resource
-def load_model(selected_model):
+def load_model():
     try:
         device = 'cuda' if torch.cuda.is_available() else 'cpu'
-        model = YOLO(selected_model)  # Load the selected model
+        model = YOLO("yolov8m.pt")  # Load the yolov8m model
         model.to(device)  # Move model to GPU if available or CPU
         check_model(model)  # Check if the model is loaded and working
         return model
@@ -39,15 +39,8 @@ def load_model(selected_model):
         st.write(f"An error occurred: {e}")
 
 
-# Dropdown menu for model selection
-model_choice = st.selectbox(
-    "Select a YOLO model",
-    options=["yoloV8s.pt", "yoloV8m.pt"],  # Add more models as needed
-    index=0
-)
-
-# Load the model based on user selection
-model = load_model(model_choice)
+# Load the model (using yolov8m by default)
+model = load_model()
 
 
 # Function to resize the image to 640x640
@@ -57,9 +50,6 @@ def resize_image(image, size=(640, 640)):
 
 # Upload an image using Streamlit
 uploaded_file = st.file_uploader("Choose an image...", type=["jpg", "jpeg", "png"])
-
-# Add a slider for the confidence threshold
-confidence_threshold = st.slider("Confidence Threshold", min_value=0.0, max_value=1.0, value=0.25)
 
 
 # Function to draw customized bounding boxes with different colors based on labels
@@ -152,7 +142,7 @@ if uploaded_file is not None:
         image = Image.open(uploaded_file)
 
         # Run the object detection
-        process_image(image, confidence_threshold)
+        process_image(image)
 
     except Exception as e:
         st.write(f"An error occurred while processing the image: {e}")
