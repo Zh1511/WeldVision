@@ -123,8 +123,8 @@ def process_image(image, confidence_threshold=0.5):
         for result in results:
             for box in result.boxes:
                 # Get bounding box coordinates
-                #x1, y1, x2, y2 = box.xyxy.cpu().numpy()[0]
-                x1, y1, x2, y2 = box.xyxy[0].cpu().numpy()
+                x1, y1, x2, y2 = box.xyxy.cpu().numpy()[0]
+                #x1, y1, x2, y2 = box.xyxy[0].cpu().numpy()
                 boxes.append([x1, y1, x2, y2])
                 labels.append(model.names[int(box.cls)])  # Class name
                 confidences.append(float(box.conf))  # Confidence score
