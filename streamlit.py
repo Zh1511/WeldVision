@@ -15,7 +15,7 @@ def check_model(model):
     try:
         # Test the model with a dummy input to ensure it's loaded correctly
         dummy_image = Image.new('RGB', (640, 640), color='white')  # Create a dummy image
-        results = model(dummy_image, conf=0.25)  # Run a test inference
+        results = model(dummy_image, conf=0.5)  # Run a test inference
         if results:
             st.write("Model loaded successfully and working.")
         else:
@@ -104,7 +104,7 @@ def display_results(boxes, labels, confidences):
 
 
 # Function to process the image
-def process_image(image, confidence_threshold=0.25):
+def process_image(image, confidence_threshold=0.5):
     try:
         # Resize the image
         resized_image = resize_image(image)
