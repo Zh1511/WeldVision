@@ -6,8 +6,6 @@ from ultralytics import YOLO
 # Title of the Streamlit App
 st.title("WeldVision")
 
-# Display disclaimer message
-st.markdown("**Disclaimer: This model is intended for academic and research purposes only. Due to potential inaccuracies, it is not recommended for commercial or critical applications**")
 
 # Function to load the model and check if it's using GPU or CPU
 @st.cache_resource
