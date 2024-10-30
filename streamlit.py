@@ -28,12 +28,6 @@ def load_model():
 # Load the model
 model = load_model()
 
-# Check if model is loaded successfully
-if model is None:
-    st.write("Error: Model failed to load.")
-else:
-    st.write("Model loaded successfully.")
-
 # Function to resize the image to 640x640
 def resize_image(image, size=(640, 640)):
     return image.resize(size)
@@ -56,10 +50,16 @@ def draw_custom_boxes(image, boxes, labels, confidences):
         # Define box coordinates and clamp them to stay within image boundaries
         x1, y1, x2, y2 = box
         width, height = image.size
-        x1 = max(0, min(x1, width))
-        y1 = max(0, min(y1, height))
-        x2 = max(0, min(x2, width))
-        y2 = max(0, min(y2, height))
+        box_width = x2 - x1
+        box_height = y2 - y1
+
+        # Print the box dimensions for debugging
+        print(f"Bounding Box Coordinates: x1={x1}, y1={y1}, x2={x2}, y2={y2}, Width={box_width}, Height={box_height}")
+
+        # Skip boxes that are too large (e.g., covering more than 70% of the image)
+        if box_width > 0.7 * width or box_height > 0.7 * height:
+            print("Skipping bounding box as it is too large")
+            continue
 
         # Determine color based on label
         if label == 'bad weld':
@@ -112,15 +112,23 @@ def process_image(image, confidence_threshold=0.5):
                 # Get bounding box coordinates
                 try:
                     x1, y1, x2, y2 = box.xyxy[0].cpu().numpy()  # Assuming the model provides x1, y1, x2, y2 format
-                    # Debugging: Print bounding box coordinates to check for out-of-bound issues
-                    print(f"Raw bounding box coordinates: {x1}, {y1}, {x2}, {y2}")
+                    width, height = resized_image.size
 
                     # Clamp coordinates to stay within image dimensions
-                    width, height = resized_image.size
                     x1 = max(0, min(x1, width))
                     y1 = max(0, min(y1, height))
                     x2 = max(0, min(x2, width))
                     y2 = max(0, min(y2, height))
+
+                    # Calculate box width and height for additional validation
+                    box_width = x2 - x1
+                    box_height = y2 - y1
+
+                    # Skip adding the box if it exceeds 70% of the image dimensions
+                    if box_width > 0.7 * width or box_height > 0.7 * height:
+                        print("Skipping bounding box as it is too large")
+                        continue
+
                     boxes.append([x1, y1, x2, y2])
                 except Exception as coord_error:
                     st.write(f"Error processing bounding box coordinates: {coord_error}")
