@@ -58,11 +58,11 @@ def draw_custom_boxes(image, boxes, labels, confidences):
 
         # Determine color based on label with transparency (RGBA)
         if label == 'bad weld':
-            box_color = (128, 0, 128, 128)  # Purple with 50% transparency
+            box_color = (128, 0, 128, 50)  # Purple with transparency
         elif label == 'defect':
-            box_color = (255, 0, 0, 128)    # Red with 50% transparency
+            box_color = (255, 0, 0, 50)    # Red with transparency
         else:
-            box_color = (0, 255, 0, 128)    # Green with 50% transparency
+            box_color = (0, 255, 0, 50)    # Green with transparency
 
         # Draw the filled bounding box on the overlay
         draw.rectangle([x1, y1, x2, y2], fill=box_color)
