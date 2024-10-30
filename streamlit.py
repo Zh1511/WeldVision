@@ -9,27 +9,14 @@ st.title("WeldVision")
 # Display disclaimer message
 st.markdown("**Disclaimer: This model is for academic purposes only and not intended for commercial use.**")
 
-# Function to check if the model is loaded successfully
-def check_model(model):
-    try:
-        # Test the model with a dummy input to ensure it's loaded correctly
-        dummy_image = Image.new('RGB', (640, 640), color='white')  # Create a dummy image
-        results = model(dummy_image, conf=0.5)  # Run a test inference
-        if results:
-            st.write("Model loaded successfully and working.")
-        else:
-            st.write("Model loaded but failed to perform inference.")
-    except Exception as e:
-        st.write(f"Model loading or inference failed: {e}")
-
-# Function to load the selected model and check if it's using GPU or CPU
+# Function to load the model and check if it's using GPU or CPU
 @st.cache_resource
 def load_model():
     try:
         device = 'cuda' if torch.cuda.is_available() else 'cpu'
         model = YOLO("trained.pt")  # Load the model
         model.to(device)  # Move model to GPU if available or CPU
-        check_model(model)  # Check if the model is loaded and working
+        st.write("Model loaded successfully and working.")
         return model
     except RuntimeError as e:
         st.write(f"RuntimeError: {e}")
@@ -58,8 +45,13 @@ def draw_custom_boxes(image, boxes, labels, confidences):
         font = ImageFont.load_default()  # Fallback to default font
 
     for box, label, conf in zip(boxes, labels, confidences):
-        # Define box coordinates
+        # Define box coordinates and clamp them to stay within image boundaries
         x1, y1, x2, y2 = box
+        width, height = image.size
+        x1 = max(0, min(x1, width))
+        y1 = max(0, min(y1, height))
+        x2 = max(0, min(x2, width))
+        y2 = max(0, min(y2, height))
 
         # Determine color based on label
         if label == 'bad weld':
@@ -93,8 +85,6 @@ def process_image(image, confidence_threshold=0.5):
     try:
         # Resize the image
         resized_image = resize_image(image)
-
-        # Display the resized image in Streamlit
         st.image(resized_image, caption='Resized Image (640x640)', use_column_width=True)
 
         # Run model prediction
@@ -108,10 +98,23 @@ def process_image(image, confidence_threshold=0.5):
         for result in results:
             for box in result.boxes:
                 # Get bounding box coordinates
-                x1, y1, x2, y2 = box.xyxy.cpu().numpy()[0]
-                boxes.append([x1, y1, x2, y2])
+                try:
+                    x1, y1, x2, y2 = box.xyxy[0].cpu().numpy()  # Assuming the model provides x1, y1, x2, y2 format
+                    # Debugging: Print bounding box coordinates to check for out-of-bound issues
+                    print(f"Raw bounding box coordinates: {x1}, {y1}, {x2}, {y2}")
 
-                # Directly use the model's class name without mapping
+                    # Clamp coordinates to stay within image dimensions
+                    width, height = resized_image.size
+                    x1 = max(0, min(x1, width))
+                    y1 = max(0, min(y1, height))
+                    x2 = max(0, min(x2, width))
+                    y2 = max(0, min(y2, height))
+                    boxes.append([x1, y1, x2, y2])
+                except Exception as coord_error:
+                    st.write(f"Error processing bounding box coordinates: {coord_error}")
+                    continue
+
+                # Get the class name from model
                 labels.append(model.names[int(box.cls)])  # Class name from model
                 confidences.append(float(box.conf))  # Confidence score
 
@@ -119,8 +122,6 @@ def process_image(image, confidence_threshold=0.5):
         if boxes:
             annotated_image = draw_custom_boxes(resized_image.copy(), boxes, labels, confidences)
             st.image(annotated_image, caption="Detected Objects with Custom Boxes", use_column_width=True)
-            
-            # Display results below the annotated image
             display_results(boxes, labels, confidences)
         else:
             st.write("No objects detected.")
