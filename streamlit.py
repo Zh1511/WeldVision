@@ -9,7 +9,6 @@ st.title("WeldVision")
 # Display disclaimer message
 st.markdown("**Disclaimer: This model is for academic purposes only and not intended for commercial use.**")
 
-
 # Function to check if the model is loaded successfully
 def check_model(model):
     try:
@@ -23,13 +22,12 @@ def check_model(model):
     except Exception as e:
         st.write(f"Model loading or inference failed: {e}")
 
-
 # Function to load the selected model and check if it's using GPU or CPU
 @st.cache_resource
 def load_model():
     try:
         device = 'cuda' if torch.cuda.is_available() else 'cpu'
-        model = YOLO("trained.pt")  # Load the yolov8m model
+        model = YOLO("trained.pt")  # Load the model
         model.to(device)  # Move model to GPU if available or CPU
         check_model(model)  # Check if the model is loaded and working
         return model
@@ -38,26 +36,15 @@ def load_model():
     except Exception as e:
         st.write(f"An error occurred: {e}")
 
-
-# Load the model (using yolov8m by default)
+# Load the model
 model = load_model()
-
-# Define a dictionary to map YOLO class names to custom labels
-class_mapping = {
-    'class_1': 'bad weld',   # Replace 'class_1' with the actual YOLO class name
-    'class_2': 'defect',     # Replace 'class_2' with the actual YOLO class name
-    'class_3': 'good weld',  # Replace 'class_3' with the actual YOLO class name
-    # Add more mappings as necessary depending on the YOLO model's class names
-}
 
 # Function to resize the image to 640x640
 def resize_image(image, size=(640, 640)):
     return image.resize(size)
 
-
 # Upload an image using Streamlit
 uploaded_file = st.file_uploader("Choose an image...", type=["jpg", "jpeg", "png"])
-
 
 # Function to draw customized bounding boxes with different colors based on labels
 def draw_custom_boxes(image, boxes, labels, confidences):
@@ -95,13 +82,11 @@ def draw_custom_boxes(image, boxes, labels, confidences):
 
     return image
 
-
 # Function to display detection results
 def display_results(boxes, labels, confidences):
     st.write("**Detection Results**")
     for i, (label, conf) in enumerate(zip(labels, confidences)):
         st.write(f"Object {i + 1}: **{label}**, Confidence: **{conf:.2f}**")
-
 
 # Function to process the image
 def process_image(image, confidence_threshold=0.5):
@@ -124,9 +109,10 @@ def process_image(image, confidence_threshold=0.5):
             for box in result.boxes:
                 # Get bounding box coordinates
                 x1, y1, x2, y2 = box.xyxy.cpu().numpy()[0]
-                #x1, y1, x2, y2 = box.xyxy[0].cpu().numpy()
                 boxes.append([x1, y1, x2, y2])
-                labels.append(model.names[int(box.cls)])  # Class name
+
+                # Directly use the model's class name without mapping
+                labels.append(model.names[int(box.cls)])  # Class name from model
                 confidences.append(float(box.conf))  # Confidence score
 
         # Draw the custom bounding boxes
@@ -141,7 +127,6 @@ def process_image(image, confidence_threshold=0.5):
 
     except Exception as e:
         st.write(f"An error occurred: {e}")
-
 
 # Only process the image if it has been uploaded
 if uploaded_file is not None:
