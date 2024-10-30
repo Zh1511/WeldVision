@@ -20,11 +20,19 @@ def load_model():
         return model
     except RuntimeError as e:
         st.write(f"RuntimeError: {e}")
+        return None
     except Exception as e:
-        st.write(f"An error occurred: {e}")
+        st.write(f"An error occurred while loading the model: {e}")
+        return None
 
 # Load the model
 model = load_model()
+
+# Check if model is loaded successfully
+if model is None:
+    st.write("Error: Model failed to load.")
+else:
+    st.write("Model loaded successfully.")
 
 # Function to resize the image to 640x640
 def resize_image(image, size=(640, 640)):
@@ -82,6 +90,10 @@ def display_results(boxes, labels, confidences):
 
 # Function to process the image
 def process_image(image, confidence_threshold=0.5):
+    if model is None:
+        st.write("Model is not loaded.")
+        return
+
     try:
         # Resize the image
         resized_image = resize_image(image)
