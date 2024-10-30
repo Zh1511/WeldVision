@@ -36,9 +36,15 @@ def resize_image(image, size=(640, 640)):
 uploaded_file = st.file_uploader("Choose an image...", type=["jpg", "jpeg", "png"])
 
 # Function to draw customized bounding boxes with different colors based on labels
+from PIL import Image, ImageDraw, ImageFont
+
+# Function to draw customized bounding boxes with transparent overlays
 def draw_custom_boxes(image, boxes, labels, confidences):
-    # Create a drawing context
-    draw = ImageDraw.Draw(image, "RGBA")
+    # Create a separate overlay image for transparency
+    overlay = Image.new("RGBA", image.size, (255, 255, 255, 0))  # Fully transparent
+
+    # Create a drawing context on the overlay image
+    draw = ImageDraw.Draw(overlay)
 
     # Load a basic font
     try:
@@ -47,40 +53,32 @@ def draw_custom_boxes(image, boxes, labels, confidences):
         font = ImageFont.load_default()  # Fallback to default font
 
     for box, label, conf in zip(boxes, labels, confidences):
-        # Define box coordinates and clamp them to stay within image boundaries
+        # Define box coordinates
         x1, y1, x2, y2 = box
-        width, height = image.size
-        box_width = x2 - x1
-        box_height = y2 - y1
 
-        # Print the box dimensions for debugging
-        print(f"Bounding Box Coordinates: x1={x1}, y1={y1}, x2={x2}, y2={y2}, Width={box_width}, Height={box_height}")
-
-        # Skip boxes that are too large (e.g., covering more than 70% of the image)
-        if box_width > 0.7 * width or box_height > 0.7 * height:
-            print("Skipping bounding box as it is too large")
-            continue
-
-        # Determine color based on label
+        # Determine color based on label with transparency (RGBA)
         if label == 'bad weld':
-            box_color = (128, 0, 128)  # Purple outline
-            fill_color = (128, 0, 128, 50)  # Transparent purple fill
+            box_color = (128, 0, 128, 128)  # Purple with 50% transparency
         elif label == 'defect':
-            box_color = (255, 0, 0)  # Red outline
-            fill_color = (255, 0, 0, 50)  # Transparent red fill
+            box_color = (255, 0, 0, 128)    # Red with 50% transparency
         else:
-            box_color = (0, 255, 0)  # Green outline for other categories
-            fill_color = (0, 255, 0, 50)  # Transparent green fill
+            box_color = (0, 255, 0, 128)    # Green with 50% transparency
 
-        # Draw the bounding box with the selected color
-        draw.rectangle([x1, y1, x2, y2], outline=box_color, width=3)
-        draw.rectangle([x1, y1, x2, y2], fill=fill_color)
+        # Draw the filled bounding box on the overlay
+        draw.rectangle([x1, y1, x2, y2], fill=box_color)
 
-        # Draw text label and confidence
+        # Draw the outline on the overlay
+        draw.rectangle([x1, y1, x2, y2], outline=(box_color[0], box_color[1], box_color[2]), width=3)
+
+        # Draw text label and confidence on the main image
         text_label = f"{label} {conf:.2f}"
-        draw.text((x1, y1), text_label, fill=(255, 255, 255, 255), font=font)
+        image_draw = ImageDraw.Draw(image)
+        image_draw.text((x1, y1), text_label, fill=(255, 255, 255), font=font)
 
-    return image
+    # Composite the overlay onto the original image to apply transparency
+    image = Image.alpha_composite(image.convert("RGBA"), overlay)
+    return image.convert("RGB")  # Convert back to RGB for displaying
+
 
 # Function to display detection results
 def display_results(boxes, labels, confidences):
