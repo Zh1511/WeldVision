@@ -108,10 +108,12 @@ def process_image(image, confidence_threshold=0.5):
     try:
         # Resize the image
         resized_image = resize_image(image)
+
+        # Display the resized image in Streamlit
         st.image(resized_image, caption='Resized Image (640x640)', use_column_width=True)
 
         # Run model prediction
-        results = model(resized_image, conf=confidence_threshold)
+        results = model(resized_image, conf=confidence_threshold)  # Directly use PIL image
 
         # Extract bounding boxes, labels, and confidences
         boxes = []
@@ -120,41 +122,26 @@ def process_image(image, confidence_threshold=0.5):
 
         for result in results:
             for box in result.boxes:
-                # Extract the confidence score and filter out low-confidence detections
-                confidence = float(box.conf)
-                if confidence < confidence_threshold:
-                    continue  # Skip low-confidence boxes
+                # Get bounding box coordinates
+                x1, y1, x2, y2 = box.xyxy.cpu().numpy()[0]
+                #x1, y1, x2, y2 = box.xyxy[0].cpu().numpy()
+                boxes.append([x1, y1, x2, y2])
+                labels.append(model.names[int(box.cls)])  # Class name
+                confidences.append(float(box.conf))  # Confidence score
 
-                # Print the full box object for debugging
-                print(f"Full box object: {box}")
-
-                # Extract coordinates and clamp them to image boundaries
-                try:
-                    x1, y1, x2, y2 = box.xyxy[0].cpu().numpy()
-                    width, height = resized_image.size
-                    x1, y1 = max(0, min(x1, width)), max(0, min(y1, height))
-                    x2, y2 = max(0, min(x2, width)), max(0, min(y2, height))
-                    boxes.append([x1, y1, x2, y2])
-                except Exception as coord_error:
-                    st.write("Error processing bounding box coordinates:", coord_error)
-                    continue
-
-                # Map YOLO class to custom class labels
-                predicted_class = model.names[int(box.cls)]
-                custom_class = class_mapping.get(predicted_class, "unknown")
-                labels.append(custom_class)
-                confidences.append(confidence)
-
-        # Draw the custom bounding boxes if valid boxes are found
+        # Draw the custom bounding boxes
         if boxes:
             annotated_image = draw_custom_boxes(resized_image.copy(), boxes, labels, confidences)
             st.image(annotated_image, caption="Detected Objects with Custom Boxes", use_column_width=True)
+            
+            # Display results below the annotated image
             display_results(boxes, labels, confidences)
         else:
             st.write("No objects detected.")
 
     except Exception as e:
-        st.write(f"An error occurred: {e}")
+        st.write(f"An error occurred: {e}")
+
 
 # Only process the image if it has been uploaded
 if uploaded_file is not None:
